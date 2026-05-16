@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, Lock, Check } from "lucide-react";
+import PasswordInput from './PasswordInput';
 import { changePassword } from "../services/api";
 
 const ChangePasswordModal = ({ onClose }) => {
@@ -80,42 +81,31 @@ const ChangePasswordModal = ({ onClose }) => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Current Password</label>
-              <input
-                type="password"
-                name="currentPassword"
-                value={formData.currentPassword}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-[#005193] focus:outline-none"
-                placeholder="Enter current password"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">New Password</label>
-              <input
-                type="password"
-                name="newPassword"
-                value={formData.newPassword}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-[#005193] focus:outline-none"
-                placeholder="Enter new password"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Confirm New Password</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-[#005193] focus:outline-none"
-                placeholder="Confirm new password"
-                required
-              />
-            </div>
+            <PasswordInput
+              label="Current Password"
+              name="currentPassword"
+              value={formData.currentPassword}
+              onChange={handleChange}
+              placeholder="Enter current password"
+              required
+            />
+            <PasswordInput
+              label="New Password"
+              name="newPassword"
+              value={formData.newPassword}
+              onChange={handleChange}
+              placeholder="Enter new password"
+              showStrength
+              required
+            />
+            <PasswordInput
+              label="Confirm New Password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm new password"
+              required
+            />
 
             <button
               type="submit"

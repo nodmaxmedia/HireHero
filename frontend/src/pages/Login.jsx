@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { login, setToken } from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
 import { Users } from "lucide-react";
+import ForgotPasswordModal from '../components/ForgotPasswordModal';
+import PasswordInput from '../components/PasswordInput';
 
 export default function Login() {
   const [activeTab, setActiveTab] = useState('hr');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showForgot, setShowForgot] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -111,25 +114,26 @@ export default function Login() {
                 />
               </div>
 
-              <div>
-                <label className="text-sm text-gray-700">Password</label>
-                <input
-                  type="password"
-                  placeholder="Enter your password"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#005193]"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                />
-              </div>
+              <PasswordInput
+                label="Password"
+                name="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Enter your password"
+              />
 
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center gap-2">
                   <input type="checkbox" className="accent-[#013362]" />
                   Remember me
                 </label>
-                <a href="#" className="text-[#013362] hover:underline">
+                <button
+                  type="button"
+                  onClick={() => setShowForgot(true)}
+                  className="text-[#013362] hover:underline text-sm"
+                >
                   Forgot password?
-                </a>
+                </button>
               </div>
 
               {error && <div className="text-red-500 text-sm">{error}</div>}
@@ -201,6 +205,8 @@ export default function Login() {
           </section>
         </div>
       </section>
+
+      {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
     </>
   );
 }

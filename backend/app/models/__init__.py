@@ -9,3 +9,4 @@ from .analytics import Analytics
 from .chat_message import ChatMessage
 from .education import Education
 from .interview import Interview
+from .otp import PasswordResetOTP

@@ -71,6 +71,21 @@ export const changePassword = async (passwordData) => {
     return res.data;
 };
 
+export const forgotPassword = async (email) => {
+    const res = await axios.post(`${AUTH_BASE}/forgot-password`, { email });
+    return res.data;
+};
+
+export const verifyOtp = async (email, otp) => {
+    const res = await axios.post(`${AUTH_BASE}/verify-otp`, { email, otp });
+    return res.data;
+};
+
+export const resetPassword = async (email, otp, new_password) => {
+    const res = await axios.post(`${AUTH_BASE}/reset-password`, { email, otp, new_password });
+    return res.data;
+};
+
 // --- Job Seeker API ---
 
 export const getJobs = async (limit) => {

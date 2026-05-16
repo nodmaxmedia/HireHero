@@ -1,9 +1,17 @@
 from flask import Blueprint, request, jsonify, redirect, url_for, session
 from app.models.user import User
 from app.models.employee import Employee
+from app.models.otp import PasswordResetOTP
 from app import db
 import jwt
 import datetime
+from datetime import timezone
+import random
+import smtplib
+import ssl
+import os
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from flask import current_app
 from authlib.integrations.flask_client import OAuth
 
@@ -204,3 +212,140 @@ def get_users_basic():
             'employee_id': employee_id
         })
     return jsonify(result)
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+def _send_otp_email(recipient_email: str, otp_code: str, first_name: str) -> bool:
+    """Send OTP via Gmail SMTP. Returns True on success."""
+    mail_user = os.getenv('MAIL_USERNAME')
+    mail_pass = os.getenv('MAIL_PASSWORD')
+    mail_from = os.getenv('MAIL_FROM', mail_user)
+    mail_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    mail_port = int(os.getenv('MAIL_PORT', 587))
+
+    if not mail_user or not mail_pass:
+        # Dev fallback: print OTP to console so the app still works without email config
+        print(f"[DEV] OTP for {recipient_email}: {otp_code}")
+        return True
+
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = 'HireHero – Your Password Reset OTP'
+    msg['From'] = f'HireHero <{mail_from}>'
+    msg['To'] = recipient_email
+
+    html_body = f"""
+    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;border:1px solid #e5e7eb;border-radius:12px">
+      <h2 style="color:#013362;margin-bottom:8px">Password Reset</h2>
+      <p style="color:#374151">Hi {first_name},</p>
+      <p style="color:#374151">Use the OTP below to reset your HireHero password. It expires in <strong>10 minutes</strong>.</p>
+      <div style="background:#f3f4f6;border-radius:8px;padding:20px 32px;text-align:center;margin:24px 0">
+        <span style="font-size:36px;font-weight:700;letter-spacing:12px;color:#013362">{otp_code}</span>
+      </div>
+      <p style="color:#6b7280;font-size:13px">If you didn't request this, you can safely ignore this email.</p>
+    </div>
+    """
+    msg.attach(MIMEText(html_body, 'html'))
+
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP(mail_server, mail_port) as server:
+            server.ehlo()
+            server.starttls(context=context)
+            server.login(mail_user, mail_pass)
+            server.sendmail(mail_from, recipient_email, msg.as_string())
+        return True
+    except Exception as e:
+        print(f"[EMAIL ERROR] {e}")
+        return False
+
+
+# ── Forgot Password Endpoints ─────────────────────────────────────────────────
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.json or {}
+    email = (data.get('email') or '').strip().lower()
+
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    # Always return 200 to avoid leaking whether the email is registered
+    if not user:
+        return jsonify({'message': 'If that email is registered, an OTP has been sent.'}), 200
+
+    # Invalidate any previous OTPs for this email
+    PasswordResetOTP.query.filter_by(email=email, is_used=False).update({'is_used': True})
+    db.session.flush()
+
+    otp_code = str(random.randint(100000, 999999))
+    expires_at = datetime.datetime.now(timezone.utc) + datetime.timedelta(minutes=10)
+
+    otp_record = PasswordResetOTP(email=email, otp_code=otp_code, expires_at=expires_at)
+    db.session.add(otp_record)
+    db.session.commit()
+
+    sent = _send_otp_email(email, otp_code, user.first_name)
+    if not sent:
+        return jsonify({'error': 'Failed to send OTP email. Please try again.'}), 500
+
+    return jsonify({'message': 'If that email is registered, an OTP has been sent.'}), 200
+
+
+@auth_bp.route('/verify-otp', methods=['POST'])
+def verify_otp():
+    data = request.json or {}
+    email = (data.get('email') or '').strip().lower()
+    otp_code = (data.get('otp') or '').strip()
+
+    if not email or not otp_code:
+        return jsonify({'error': 'Email and OTP are required'}), 400
+
+    record = (PasswordResetOTP.query
+              .filter_by(email=email, otp_code=otp_code, is_used=False)
+              .order_by(PasswordResetOTP.created_at.desc())
+              .first())
+
+    if not record:
+        return jsonify({'error': 'Invalid OTP'}), 400
+
+    if datetime.datetime.now(timezone.utc) > record.expires_at.replace(tzinfo=timezone.utc):
+        return jsonify({'error': 'OTP has expired. Please request a new one.'}), 400
+
+    return jsonify({'message': 'OTP verified successfully'}), 200
+
+
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    data = request.json or {}
+    email = (data.get('email') or '').strip().lower()
+    otp_code = (data.get('otp') or '').strip()
+    new_password = data.get('new_password') or ''
+
+    if not email or not otp_code or not new_password:
+        return jsonify({'error': 'Email, OTP, and new password are required'}), 400
+
+    if len(new_password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
+
+    record = (PasswordResetOTP.query
+              .filter_by(email=email, otp_code=otp_code, is_used=False)
+              .order_by(PasswordResetOTP.created_at.desc())
+              .first())
+
+    if not record:
+        return jsonify({'error': 'Invalid OTP'}), 400
+
+    if datetime.datetime.now(timezone.utc) > record.expires_at.replace(tzinfo=timezone.utc):
+        return jsonify({'error': 'OTP has expired. Please request a new one.'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    user.set_password(new_password)
+    record.is_used = True
+    db.session.commit()
+
+    return jsonify({'message': 'Password reset successfully. You can now log in.'}), 200

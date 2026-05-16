@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { register } from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
 import { Users } from "lucide-react";
+import PasswordInput from '../components/PasswordInput';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -182,16 +183,14 @@ export default function Register() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm text-gray-700">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Create password"
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#005193]"
-                />
-              </div>
+              <PasswordInput
+                label="Password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="Create password"
+                showStrength
+              />
 
               {/* Terms Checkbox */}
               <div className="flex items-start text-sm text-gray-600">
