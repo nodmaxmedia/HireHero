@@ -571,7 +571,7 @@ export default function DashboardHR() {
 
                     <div className="bg-gray-50 px-6 py-4 flex justify-between gap-3 border-t border-gray-100">
                         <a 
-                            href={`/profile/${selectedInterview.user_id}`} 
+                            href={`/profile/${selectedInterview.display_user_id || selectedInterview.user_id}`} 
                             target="_blank" 
                             rel="noreferrer"
                             className="flex-1 py-2 text-center text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition shadow-sm"

@@ -1,31 +1,42 @@
 import React, { useState } from 'react';
 import { login, setToken } from '../services/api';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { Users } from "lucide-react";
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
 import PasswordInput from '../components/PasswordInput';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const [activeTab, setActiveTab] = useState('hr');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const navigate = useNavigate();
+  const { login: authLogin, user, isAuthenticated } = useAuth();
+
+  // Already logged in — send straight to their dashboard
+  if (isAuthenticated) {
+    return <Navigate to={user.role === 'hr' ? '/dashboard-hr' : '/dashboard-applicant'} replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      const res = await login(email, password);
+      const res = await login(email, password, rememberMe);
       // Check role match
       if ((activeTab === 'hr' && res.role !== 'hr') || (activeTab === 'job' && res.role !== 'candidate')) {
         setError('You are trying to login from the wrong tab.');
         return;
       }
-      if (res.token) setToken(res.token);
-      if (res.id) localStorage.setItem('user_id', res.id); // numeric user id for backend
-      if (res.user_id) localStorage.setItem('display_user_id', res.user_id); // display user id for profile
+      if (res.token) {
+        setToken(res.token);
+        authLogin(res.token);
+      }
+      if (res.id) localStorage.setItem('user_id', res.id);
+      if (res.user_id) localStorage.setItem('display_user_id', res.user_id);
       if (res.role === 'hr') {
         navigate('/dashboard-hr');
       } else if (res.role === 'candidate') {
@@ -123,8 +134,13 @@ export default function Login() {
               />
 
               <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" className="accent-[#013362]" />
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="accent-[#013362]"
+                    checked={rememberMe}
+                    onChange={e => setRememberMe(e.target.checked)}
+                  />
                   Remember me
                 </label>
                 <button

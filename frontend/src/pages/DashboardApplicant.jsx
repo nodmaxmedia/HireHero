@@ -5,9 +5,10 @@ import JobSearch from '../components/JobSearch';
 import MyApplications from '../components/MyApplications';
 import Chatbot from '../components/JobSeekerGenAI';
 import ProfileApplicant from '../components/ProfileApplicant';
-import { 
-  Briefcase, Send, Eye, Users, Sparkles, FileText, 
-  BarChart2, X, MapPin, Clock, IndianRupee, GraduationCap, Globe, Gift 
+import {
+  Briefcase, Send, Eye, Users, Sparkles, FileText,
+  BarChart2, X, MapPin, Clock, IndianRupee, GraduationCap, Globe, Gift,
+  AlertCircle, ChevronRight
 } from "lucide-react";
 
 export default function DashboardApplicant() {
@@ -23,10 +24,13 @@ export default function DashboardApplicant() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [upcomingInterviews, setUpcomingInterviews] = useState([]);
 
+  const [profileCompleteness, setProfileCompleteness] = useState(null);
+  const [showCompleteBanner, setShowCompleteBanner] = useState(false);
+
   // --- MODAL STATE ---
-  const [selectedJob, setSelectedJob] = useState(null); 
-  const [appliedJobIds, setAppliedJobIds] = useState(new Set()); 
-  const [applyingId, setApplyingId] = useState(null); 
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [appliedJobIds, setAppliedJobIds] = useState(new Set());
+  const [applyingId, setApplyingId] = useState(null);
 
   // --- Helper: Salary Formatter ---
   const formatSalary = (amount, type) => {
@@ -79,15 +83,22 @@ export default function DashboardApplicant() {
             }
           }
 
-          // 2. Fetch Profile Stats (Real Profile Views)
+          // 2. Fetch Profile Stats
           try {
             const profileData = await getProfileMe();
-            setStats(prev => prev.map(stat => 
-                stat.label === "Profile Views" 
-                ? { ...stat, value: profileData.views || 0 } 
+            const completeness = profileData.completeness || 0;
+            setProfileCompleteness(completeness);
+            setStats(prev => prev.map(stat =>
+              stat.label === "Profile Views"
+                ? { ...stat, value: profileData.views || 0 }
                 : stat
             ));
-          } catch(e) {
+            // Auto-redirect to profile tab if completeness < 50%
+            if (completeness < 50) {
+              setActiveTab("profile");
+              setShowCompleteBanner(true);
+            }
+          } catch (e) {
             console.error("Failed to load profile views", e);
           }
 
@@ -328,7 +339,30 @@ export default function DashboardApplicant() {
         {/* Tab content */}
         {activeTab === "jobs" && <JobSearch onViewJob={setSelectedJob} />}
         {activeTab === "applications" && <MyApplications onViewJob={setSelectedJob} />}
-        {activeTab === "profile" && <ProfileApplicant />}
+        {activeTab === "profile" && (
+          <>
+            {showCompleteBanner && (
+              <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 shadow-sm">
+                <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                <p className="text-sm text-amber-800 flex-1">
+                  <span className="font-semibold">Profile {profileCompleteness}% complete</span>
+                  <span className="text-amber-600 mx-1.5">—</span>
+                  Complete your profile for a better job hunt experience.
+                </p>
+                <div className="w-24 h-1.5 bg-amber-100 rounded-full overflow-hidden shrink-0">
+                  <div className="h-full bg-amber-400 rounded-full" style={{ width: `${profileCompleteness}%` }} />
+                </div>
+                <button onClick={() => setShowCompleteBanner(false)} className="text-amber-400 hover:text-amber-600 transition shrink-0">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+            <ProfileApplicant onCompletenessChange={(val) => {
+              setProfileCompleteness(val);
+              if (val >= 50) setShowCompleteBanner(false);
+            }} />
+          </>
+        )}
         {activeTab === "chat" && <Chatbot />}
       </main>
 

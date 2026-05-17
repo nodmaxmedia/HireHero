@@ -81,7 +81,7 @@ export default function PasswordInput({
         <input
           type={show ? 'text' : 'password'}
           name={name}
-          value={value}
+          value={value ?? ''}
           onChange={onChange}
           placeholder={placeholder}
           autoFocus={autoFocus}

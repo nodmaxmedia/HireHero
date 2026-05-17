@@ -3,6 +3,17 @@ import jwt
 import re
 from .models import User
 
+
+def compute_display_user_id(user):
+    """Returns the human-readable user ID: lowercase firstName + last 3 digits of phone."""
+    profile = user.profile
+    phone = profile.phone if profile else ''
+    phone_digits = ''.join(filter(str.isdigit, phone))
+    name = user.first_name.lower()
+    if len(phone_digits) >= 3:
+        return f"{name}{phone_digits[-3:]}"
+    return f"{name}{phone_digits}"
+
 def get_current_user():
     """
     Retrieves the current authenticated user from Authorization header (Bearer Token)

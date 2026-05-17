@@ -61,9 +61,8 @@ def register():
     profile = Profile(user_id=user.id, phone=phone)
     db.session.add(profile)
     db.session.commit()
-    # Compose user_id as firstname+last 3 digits of phone
     phone_digits = ''.join(filter(str.isdigit, phone))
-    user_id = f"{first_name}{phone_digits[-3:]}" if len(phone_digits) >= 3 else f"{first_name}{phone_digits}"
+    user_id = f"{first_name.lower()}{phone_digits[-3:]}" if len(phone_digits) >= 3 else f"{first_name.lower()}{phone_digits}"
     return jsonify({'message': 'User registered successfully', 'user_id': user_id, 'id': user.id}), 201
 
 @auth_bp.route('/login', methods=['POST'])
@@ -76,11 +75,12 @@ def login():
         phone = profile.phone if profile else ''
         first_name = user.first_name
         phone_digits = ''.join(filter(str.isdigit, phone))
-        user_id = f"{first_name}{phone_digits[-3:]}" if len(phone_digits) >= 3 else f"{first_name}{phone_digits}"
+        user_id = f"{first_name.lower()}{phone_digits[-3:]}" if len(phone_digits) >= 3 else f"{first_name.lower()}{phone_digits}"
+        expiry = datetime.timedelta(days=5) if data.get('remember_me') else datetime.timedelta(hours=24)
         token = jwt.encode({
             'user_id': user.id,
             'role': user.role,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            'exp': datetime.datetime.now(timezone.utc) + expiry
         }, current_app.config['SECRET_KEY'], algorithm='HS256')
         return jsonify({'message': 'Login successful', 'token': token, 'role': user.role, 'user_id': user_id, 'id': user.id}), 200
     return jsonify({'error': 'Invalid credentials'}), 401

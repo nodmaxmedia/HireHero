@@ -13,7 +13,7 @@ export default function Register() {
     password: '',
     phone: '',
     companyName: '',
-    role: 'hr' // Default role selected
+    role: 'hr',
   });
   const [error, setError] = useState('');
   const [status, setStatus] = useState({ message: "", type: "" });
@@ -129,6 +129,7 @@ export default function Register() {
                   <input
                     type="text"
                     name="firstName"
+                    value={form.firstName}
                     placeholder="Enter first name"
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#005193]"
@@ -139,6 +140,7 @@ export default function Register() {
                   <input
                     type="text"
                     name="lastName"
+                    value={form.lastName}
                     placeholder="Enter last name"
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#005193]"
@@ -153,6 +155,7 @@ export default function Register() {
                     <input
                       type="text"
                       name="companyName"
+                      value={form.companyName}
                       placeholder="Enter company name"
                       onChange={handleChange}
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#005193]"
@@ -166,6 +169,7 @@ export default function Register() {
                   <input
                     type="email"
                     name="email"
+                    value={form.email}
                     placeholder="Enter email"
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#005193]"
@@ -176,6 +180,7 @@ export default function Register() {
                   <input
                     type="tel"
                     name="phone"
+                    value={form.phone}
                     placeholder="Enter phone number"
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#005193]"

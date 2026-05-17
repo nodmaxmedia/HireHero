@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from ..database import db
 from ..models import Application, User, Job
-from ..utils import get_current_user
+from ..utils import get_current_user, compute_display_user_id
 from ..services.matching_service import matching_service
 import json
 import os
@@ -237,6 +237,7 @@ def get_company_applications():
         enriched.append({
             'id': app.id,
             'user_id': app.user_id,
+            'display_user_id': compute_display_user_id(user) if user else None,
             'job_id': app.job_id,
             'status': app.status,
             'applied_at': app.applied_at,

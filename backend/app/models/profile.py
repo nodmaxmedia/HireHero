@@ -17,14 +17,14 @@ class Profile(db.Model):
 
     def calculate_completeness(self):
         score = 0
-        if self.phone: score += 10
-        if self.location: score += 10
-        if self.summary: score += 10
+        if self.phone:       score += 5   # always present after signup
+        if self.location:    score += 10
+        if self.summary:     score += 15
         if self.profile_pic: score += 10
-        if self.resume: score += 20
-        if self.experiences: score += 20
-        # Check if educations relationship exists and has items
-        if hasattr(self, 'educations') and self.educations: score += 20
-        
-        self.completeness = score
-        return score
+        if self.experiences: score += 15
+        if hasattr(self, 'educations') and self.educations: score += 15
+        # Resume carries the most weight — without it max is 70
+        if self.resume:      score += 30
+
+        self.completeness = min(score, 100)
+        return self.completeness

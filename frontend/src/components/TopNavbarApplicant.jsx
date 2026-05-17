@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { LogOut, User, Settings, Users } from "lucide-react";
 import ChangePasswordModal from "./ChangePasswordModal";
+import { useAuth } from "../context/AuthContext";
 
 const tabConfig = [
   { tab: "dashboard", label: "Dashboard" },
@@ -11,11 +12,7 @@ const tabConfig = [
 
 const TopNavbarApplicant = ({ activeTab, setActiveTab }) => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/";
-  };
+  const { logout } = useAuth();
 
   return (
     <>
@@ -66,7 +63,7 @@ const TopNavbarApplicant = ({ activeTab, setActiveTab }) => {
 
           <button
             className="flex items-center gap-1 px-2 py-1 rounded text-[#d32f2f] font-medium text-sm transition"
-            onClick={handleLogout}
+            onClick={logout}
             title="Logout"
           >
             <LogOut className="h-5 w-5" /> Logout

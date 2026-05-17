@@ -9,9 +9,7 @@ export const setToken = (token) => {
     localStorage.setItem("token", token);
 };
 
-export const getToken = () => {
-    return localStorage.getItem("token");
-};
+export const getToken = () => localStorage.getItem("token");
 
 // Axios instance for authenticated requests
 export const axiosAuth = axios.create({
@@ -45,8 +43,8 @@ axiosAuth.interceptors.response.use(
 );
 
 // --- Auth Endpoints ---
-export const login = async (email, password) => {
-    const res = await axios.post(`${AUTH_BASE}/login`, { email, password });
+export const login = async (email, password, rememberMe = false) => {
+    const res = await axios.post(`${AUTH_BASE}/login`, { email, password, remember_me: rememberMe });
     if (res.data && res.data.token) setToken(res.data.token);
     if (res.data && res.data.id)
         localStorage.setItem("user_id", String(res.data.id));

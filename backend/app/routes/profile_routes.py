@@ -1,8 +1,9 @@
 import os
+import re
 from flask import current_app, Blueprint, request, jsonify, g
 from ..database import db
 from ..models import Profile, Experience, Education, User
-from ..utils import get_current_user
+from ..utils import get_current_user, compute_display_user_id
 
 profile_bp = Blueprint('profile_bp', __name__)
 
@@ -23,6 +24,7 @@ def profile_me():
         return jsonify({
             'id': profile.id,
             'user_id': profile.user_id,
+            'display_user_id': compute_display_user_id(user),
             'first_name': user.first_name,
             'last_name': user.last_name,
             'full_name': f"{user.first_name} {user.last_name}",
@@ -288,9 +290,25 @@ def get_user_profile_hr(user_id):
     })
 
 # --- Public Profile Endpoint ---
-@profile_bp.route('/public/profile/<int:user_id>', methods=['GET'])
-def get_public_profile(user_id):
-    target_user = User.query.get_or_404(user_id)
+@profile_bp.route('/public/profile/<string:display_user_id>', methods=['GET'])
+def get_public_profile(display_user_id):
+    # Resolve display_user_id (e.g. "Ayush123") → User row
+    match = re.match(r'^([a-z]+)(\d{1,3})$', display_user_id.lower())
+    if not match:
+        return jsonify({'error': 'Invalid profile ID'}), 404
+
+    first_name_lower, last3 = match.groups()
+    target_user = None
+    for u in User.query.filter(User.first_name.ilike(first_name_lower)).all():
+        profile_obj = u.profile
+        if profile_obj and profile_obj.phone:
+            digits = ''.join(filter(str.isdigit, profile_obj.phone))
+            if digits[-3:] == last3:
+                target_user = u
+                break
+
+    if not target_user:
+        return jsonify({'error': 'Profile not found'}), 404
     profile = target_user.profile
     
     if not profile:

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getPublicProfile } from "../services/api";
 import { Users, Briefcase, Calendar, MapPin, Mail, BookOpen, Download } from "lucide-react";
+import QRCode from "react-qr-code";
 
 // Helper for date formatting
 const formatDate = (dateString) => {
@@ -12,15 +13,48 @@ const formatDate = (dateString) => {
 };
 
 const PublicProfile = () => {
-  const { id } = useParams(); // Get user ID from URL
+  const { userId } = useParams();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [qrCopied, setQrCopied] = useState(false);
+  const profileUrl = typeof window !== 'undefined' ? window.location.href : '';
+
+  const handleDownloadQr = () => {
+    const svg = document.getElementById('profile-qr-code');
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      const a = document.createElement('a');
+      a.download = `${userId}-qr.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    };
+    img.src = url;
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(profileUrl).then(() => {
+      setQrCopied(true);
+      setTimeout(() => setQrCopied(false), 2000);
+    });
+  };
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const data = await getPublicProfile(id);
+        const data = await getPublicProfile(userId);
         setProfile(data);
       } catch (err) {
         setError("Profile not found or private.");
@@ -29,7 +63,7 @@ const PublicProfile = () => {
       }
     }
     fetchData();
-  }, [id]);
+  }, [userId]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
@@ -58,7 +92,7 @@ const PublicProfile = () => {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-6 space-y-6">
+      <main className="max-w-5xl mx-auto py-6 space-y-6">
         {/* Header Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
           <div className="relative">
@@ -89,19 +123,44 @@ const PublicProfile = () => {
                 {profile.summary}
               </p>
             )}
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={handleDownloadQr}
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#005193] border border-[#005193] px-3 py-1.5 rounded-lg hover:bg-blue-50 transition"
+              >
+                <Download className="w-3 h-3" /> Save QR
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition"
+              >
+                {qrCopied ? '✓ Copied!' : '🔗 Copy Link'}
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-3">
-             {profile.resume_url && isCandidate && (
-                <a 
-                  href={profile.resume_url.startsWith("http") ? profile.resume_url : `/api${profile.resume_url}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 bg-[#005193] text-white px-5 py-2.5 rounded-xl font-semibold shadow hover:opacity-90 transition"
-                >
-                  <Download className="w-4 h-4" /> Download Resume
-                </a>
-             )}
+          {/* QR Code Card */}
+          <div className="flex flex-col items-center gap-3 shrink-0">
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-3 shadow-sm">
+              <QRCode
+                id="profile-qr-code"
+                value={profileUrl}
+                size={120}
+                fgColor="#013362"
+                bgColor="#ffffff"
+                level="M"
+              />
+            </div>
+            {profile.resume_url && isCandidate && (
+              <a
+                href={profile.resume_url.startsWith("http") ? profile.resume_url : `/api${profile.resume_url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-[#005193] text-white px-4 py-2 rounded-xl text-sm font-semibold shadow hover:opacity-90 transition w-full justify-center"
+              >
+                <Download className="w-4 h-4" /> Resume
+              </a>
+            )}
           </div>
         </div>
 

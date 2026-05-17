@@ -9,11 +9,7 @@ def health_check():
 
 @utility_bp.route('/system/status', methods=['GET'])
 def get_system_status():
-    """Returns the current server instance ID."""
-    return jsonify({
-        'status': 'online',
-        'instance_id': current_app.config.get('SERVER_INSTANCE_ID')
-    })
+    return jsonify({'status': 'online'})
 
 @utility_bp.route('/uploads/<path:filename>', methods=['GET'])
 def get_uploaded_file(filename):

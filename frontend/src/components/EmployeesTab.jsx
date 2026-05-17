@@ -418,7 +418,7 @@ const EmployeesTab = () => {
 
                           {emp.user_id && (
                             <a
-                              href={`/profile/${emp.user_id}`}
+                              href={`/profile/${emp.display_user_id || emp.user_id}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-50 transition flex items-center gap-1"

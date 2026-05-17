@@ -842,7 +842,7 @@ const RecruitmentTab = () => {
                                 )}
                                 
                                 <a 
-                                  href={`/profile/${app.user_id}`} 
+                                  href={`/profile/${app.display_user_id || app.user_id}`} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   className="flex items-center gap-2 text-sm font-semibold text-[#005193] hover:underline bg-white border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition shadow-sm"

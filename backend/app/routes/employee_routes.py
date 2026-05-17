@@ -2,7 +2,7 @@ import os
 from flask import Blueprint, request, jsonify, current_app
 from ..database import db
 from ..models import Employee, Performance, User, Profile
-from ..utils import get_current_user
+from ..utils import get_current_user, compute_display_user_id
 
 employee_bp = Blueprint('employee_bp', __name__)
 
@@ -40,6 +40,7 @@ def get_employees():
         employee_list.append({
             'id': e.id,
             'user_id': e.user_id,
+            'display_user_id': compute_display_user_id(user_obj) if user_obj else None,
             'first_name': user_obj.first_name if user_obj else "",
             'last_name': user_obj.last_name if user_obj else "",
             'name': full_name,

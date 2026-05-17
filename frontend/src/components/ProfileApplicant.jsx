@@ -6,7 +6,7 @@ import { BookOpen, Trash2 } from "lucide-react";
 import { Camera, Eye, Download, Link2, Plus, X, User, Mail, Phone, MapPin, Save } from "lucide-react";
 import TopNavbarApplicant from "../components/TopNavbarApplicant";
 
-const ProfileApplicant = () => {
+const ProfileApplicant = ({ onCompletenessChange } = {}) => {
   const [activeTab, setActiveTab] = useState("profile");
   const [profilePic, setProfilePic] = useState(null);
   const [resumeFile, setResumeFile] = useState(null);
@@ -58,18 +58,20 @@ const ProfileApplicant = () => {
     async function fetchProfile() {
       try {
         const p = await getProfileMe(userId);
-        let fullName = p.full_name || ((p.first_name || '') + ' ' + (p.last_name || '')).trim();
-        let username = p.first_name + p.phone.slice(-3);
+        const fullName = p.full_name || ((p.first_name || '') + ' ' + (p.last_name || '')).trim();
+        const displayId = p.display_user_id || (p.first_name?.toLowerCase() + (p.phone || '').replace(/\D/g, '').slice(-3));
+        const completeness = p.completeness || 0;
         setProfile({
           user_id: p.user_id,
+          display_user_id: displayId,
           fullName,
-          username: username || '',
+          username: displayId || '',
           role: p.role || '',
           location: p.location || '',
           email: p.email || '',
           phone: p.phone || '',
           summary: p.summary || '',
-          completeness: p.completeness || 0,
+          completeness,
           experiences: p.experiences || [],
           educations: p.educations || [],
           profile_pic: p.profile_pic || '',
@@ -82,12 +84,17 @@ const ProfileApplicant = () => {
     fetchProfile();
   }, [userId]);
 
+  // Sync completeness to parent banner whenever it changes
+  useEffect(() => {
+    onCompletenessChange?.(profile.completeness);
+  }, [profile.completeness]);
+
   const handlePreviewProfile = () => {
     if (!profile.user_id) {
         setStatus({ msg: 'User ID missing. Save profile first.', type: 'error' });
         return;
     }
-    const url = `${window.location.origin}/profile/${profile.user_id}`;
+    const url = `${window.location.origin}/profile/${profile.display_user_id || profile.user_id}`;
     
     // Open in a new tab ('_blank')
     window.open(url, '_blank');
@@ -99,7 +106,7 @@ const ProfileApplicant = () => {
         return;
     }
     
-    const url = `${window.location.origin}/profile/${profile.user_id}`;
+    const url = `${window.location.origin}/profile/${profile.display_user_id || profile.user_id}`;
     
     navigator.clipboard.writeText(url).then(() => {
       setStatus({ msg: 'Public profile link copied to clipboard!', type: 'success' });

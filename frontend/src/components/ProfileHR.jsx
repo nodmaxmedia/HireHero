@@ -98,14 +98,14 @@ const ProfileHR = () => {
   // Preview Public Profile
   const handlePreview = () => {
     if (profile.user_id) {
-        window.open(`/profile/${profile.user_id}`, '_blank');
+        window.open(`/profile/${profile.display_user_id || profile.user_id}`, '_blank');
     }
   };
 
   // Share Profile Link
   const handleShare = () => {
     if (profile.user_id) {
-        const url = `${window.location.origin}/profile/${profile.user_id}`;
+        const url = `${window.location.origin}/profile/${profile.display_user_id || profile.user_id}`;
         navigator.clipboard.writeText(url);
         setStatus({ msg: 'Public link copied to clipboard!', type: 'success' });
         setTimeout(() => setStatus({ msg: '', type: '' }), 3000);
